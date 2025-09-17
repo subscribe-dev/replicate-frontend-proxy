@@ -91,32 +91,55 @@ The project includes comprehensive tests with:
 - CORS validation
 - Coverage reporting
 
-### CI/CD
+### Continuous Integration
 
-GitHub Actions automatically:
-- ✅ Runs tests and type checking
-- 📊 Generates test reports and coverage
-- 🏗️ Builds deployment artifacts
-- 📈 Updates coverage badges
-- 💬 Comments PR coverage changes
+The project includes automated testing and deployment workflows:
+- Automated test execution and type checking on all pull requests
+- Code coverage reporting and badge generation
+- Deployment artifact building and validation
+- Pull request coverage change reporting
 
 ## Deployment
 
-The built CommonJS output will be in `dist/proxy.js`, ready for AWS Lambda deployment.
+### Quick Deploy
 
-Host a lambda with content something like:
+1. Build the project:
+   ```bash
+   bun run build
+   ```
+
+2. Deploy the generated `dist/proxy.js` to AWS Lambda
+
+3. Configure your Lambda function with appropriate environment variables and permissions
+
+### Using as a Package
+
+You can also import this package directly in your own Lambda function:
 
 ```typescript
-// Entire lambda code for a simple proxy to the replicate-frontend-proxy:
+// Your Lambda handler
 module.exports = require('@subscribe.dev/replicate-frontend-proxy');
 ```
 
-## Security
+### AWS Configuration
 
-- API keys are passed in request body and never stored
-- CORS enabled with wildcard origin for frontend flexibility
-- Comprehensive error logging without exposing sensitive data
-- Request validation for required fields
+Ensure your Lambda function has:
+- Node.js 18+ runtime
+- Appropriate timeout settings (recommended: 30 seconds)
+- Memory allocation based on your model requirements
+- Function URL enabled for HTTP access
+
+## Security Model
+
+This proxy is designed with security as a primary concern:
+
+- **No Stored Credentials**: API keys are provided with each request and never persisted on the server
+- **Request Validation**: All incoming requests are validated for required fields and proper structure
+- **Error Sanitization**: Error responses are logged comprehensively but sanitized before returning to clients
+- **CORS Support**: Configured to work with any frontend domain while maintaining security
+- **Audit Trail**: All requests and responses are logged for monitoring and debugging
+
+The proxy acts as a security boundary, ensuring that sensitive API credentials never reach client-side code while maintaining full functionality.
 
 ## License
 

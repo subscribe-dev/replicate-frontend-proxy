@@ -145,4 +145,31 @@ describe('Response Helpers', () => {
     expect(body.error).toBe('Too Many Requests');
     expect(body.details).toBe('Rate limit exceeded');
   });
+
+  test('createResponse handles restricted CORS origins', () => {
+    // Set up environment with restricted CORS origins
+    const originalEnv = process.env.CORS_ALLOWED_ORIGINS;
+    process.env.CORS_ALLOWED_ORIGINS = 'https://app1.com,https://app2.com';
+    
+    try {
+      // Test with allowed origin
+      const response1 = createResponse(200, { test: true }, {}, 'https://app1.com');
+      expect(response1.headers?.['Access-Control-Allow-Origin']).toBe('https://app1.com');
+      
+      // Test with disallowed origin - should fall back to first allowed origin
+      const response2 = createResponse(200, { test: true }, {}, 'https://evil.com');
+      expect(response2.headers?.['Access-Control-Allow-Origin']).toBe('https://app1.com');
+      
+      // Test with no origin - should use first allowed origin
+      const response3 = createResponse(200, { test: true });
+      expect(response3.headers?.['Access-Control-Allow-Origin']).toBe('https://app1.com');
+    } finally {
+      // Restore original environment
+      if (originalEnv) {
+        process.env.CORS_ALLOWED_ORIGINS = originalEnv;
+      } else {
+        delete process.env.CORS_ALLOWED_ORIGINS;
+      }
+    }
+  });
 });
