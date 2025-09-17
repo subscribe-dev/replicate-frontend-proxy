@@ -1,6 +1,6 @@
 {
   "name": "@subscribe.dev/replicate-frontend-proxy",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "AWS Lambda function that serves as a secure proxy for the Replicate API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,13 +19,13 @@
   "scripts": {
     "test": "bun test --coverage",
     "test:ci": "bun test --coverage --coverage-reporter=lcov --coverage-dir=coverage",
-    "build": "npm run build:cjs && npm run build:esm && npm run build:types",
+    "build": "bun run build:cjs && bun run build:esm && bun run build:types",
     "build:cjs": "bun build src/index.ts --outdir dist --target node --format cjs --outfile index.js",
-    "build:esm": "bun build src/index.ts --outdir dist --target node --format esm --outfile index.mjs",
+    "build:esm": "bun build src/index.ts --target node --format esm --outfile dist/index.mjs",
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
     "dev": "bun run src/proxy.ts",
     "clean": "rm -rf dist coverage",
-    "prebuild": "npm run clean",
+    "prebuild": "bun run clean",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [

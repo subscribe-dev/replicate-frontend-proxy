@@ -6,21 +6,23 @@ import { getConfig } from './config';
 import { withTimeout, sanitizeForLogs, isValidJsonSize } from './utils';
 
 // Lambda handler for Replicate API proxy
-export const handler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+export const handler = async (event: any, context: Context): Promise<APIGatewayProxyResult> => {
   const config = getConfig();
   const requestId = context.awsRequestId;
   const timestamp = new Date().toISOString();
   const origin = event.headers?.['origin'] || event.headers?.['Origin'];
 
   try {
-    console.log(`[${requestId}] Received ${event.httpMethod} request at ${timestamp}`);
-    console.log(`[${requestId}] Path: ${event.path}`);
-
-    // Handle different paths
-    const path = event.path || '/';
-
+    // Extract path and method using CloudFront/Lambda Function URL format
+    const path = event.rawPath || event.requestContext?.http?.path || '/';
+    const method = event.requestContext?.http?.method || event.httpMethod || 'GET';
+    
+    console.log(`[${requestId}] Received ${method} request at ${timestamp}`);
+    console.log(`[${requestId}] Path: ${path}`);
+    console.log(`[${requestId}] Event structure:`, JSON.stringify(event, null, 2));
+    
     // Health check endpoint
-    if (path === '/health' && event.httpMethod === 'GET') {
+    if (path === '/health' && method === 'GET') {
       const healthResponse: HealthResponse = {
         status: 'ok',
         message: 'Replicate proxy server is running',
@@ -33,12 +35,12 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
     // Main proxy endpoint
     if (path === '/api/replicate') {
       // Handle OPTIONS requests for CORS
-      if (event.httpMethod === 'OPTIONS') {
+      if (method === 'OPTIONS') {
         return corsPreflightResponse();
       }
 
       // Handle GET requests (return instructions)
-      if (event.httpMethod === 'GET') {
+      if (method === 'GET') {
         const instructions: ApiInstructionsResponse = {
           message: 'Replicate API Proxy',
           instructions: {
@@ -55,7 +57,7 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
       }
 
       // Handle POST requests
-      if (event.httpMethod === 'POST') {
+      if (method === 'POST') {
         // Check request size
         if (event.body && !isValidJsonSize(event.body, config.maxRequestSize)) {
           console.warn(`[${requestId}] Request body too large: ${Buffer.byteLength(event.body, 'utf8')} bytes`);
@@ -120,8 +122,8 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
     }
 
     // Catch-all for unmatched routes
-    console.log(`[${requestId}] Route not found: ${event.httpMethod}:${path}`);
-    return notFound(`Route ${event.httpMethod}:${path} not found`);
+    console.log(`[${requestId}] Route not found: ${method}:${path}`);
+    return notFound(`Route ${method}:${path} not found`);
 
   } catch (error: any) {
     console.error(`[${requestId}] Lambda handler error:`, error?.message);
