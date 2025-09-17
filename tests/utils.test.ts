@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { withTimeout, sanitizeForLogs, generateCorrelationId, isValidJsonSize } from './utils';
+import { withTimeout, sanitizeForLogs, generateCorrelationId, isValidJsonSize } from '../src/utils';
 
 describe('Utility Functions', () => {
   describe('withTimeout', () => {

@@ -1,6 +1,6 @@
 {
   "name": "@subscribe.dev/replicate-frontend-proxy",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "description": "AWS Lambda function that serves as a secure proxy for the Replicate API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

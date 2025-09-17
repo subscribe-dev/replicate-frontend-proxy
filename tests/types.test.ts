@@ -3,7 +3,7 @@ import {
   isValidApiKey, 
   isValidModelName, 
   validateReplicateRequest 
-} from './types';
+} from '../src/types';
 
 describe('Type Validation Functions', () => {
   describe('isValidApiKey', () => {

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, spyOn } from 'bun:test';
-import { handler } from './proxy';
+import { handler } from '../src/proxy';
 import { ReplicateMock } from './test-utils/replicate-mock';
 import { createAPIGatewayEvent, createReplicatePostEvent, createLambdaContext } from './test-utils/lambda-events';
 

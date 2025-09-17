@@ -8,7 +8,7 @@ import {
   corsPreflightResponse, 
   customError,
   createResponse 
-} from './responses';
+} from '../src/responses';
 
 describe('Response Helpers', () => {
   test('createResponse creates proper response structure', () => {

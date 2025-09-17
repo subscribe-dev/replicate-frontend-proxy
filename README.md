@@ -4,39 +4,61 @@
 [![codecov](https://codecov.io/gh/subscribe-dev/replicate-frontend-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/USER/replicate-frontend-proxy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-AWS Lambda function that serves as a secure proxy for the Replicate API. The proxy allows frontend applications to make requests to Replicate models without exposing API keys in client-side code.
+A secure, serverless proxy service that enables frontend applications to safely interact with Replicate AI models without exposing API credentials in client-side code.
 
-## Features
+## Overview
 
-- 🔒 Secure API key handling (never stored on server)
-- 🌐 CORS-enabled for cross-origin requests
-- 🚀 Serverless deployment with AWS Lambda
-- 🧪 Comprehensive test coverage
-- ⚡ Built with Bun for fast performance
-- 📊 Automatic test reporting and coverage badges
+This package provides a ready-to-deploy AWS Lambda function that acts as an intermediary between your frontend applications and the Replicate API. By routing requests through this proxy, you can integrate AI models into your web applications while maintaining security best practices and keeping sensitive API keys on the server side.
 
-## Architecture
+The proxy is designed for easy deployment and requires minimal configuration, making it simple to add AI capabilities to any frontend project.
 
-- **Single Lambda Handler**: `src/proxy.ts` - Contains the main AWS Lambda handler function
-- **Endpoints**:
-  - `GET /health` - Health check endpoint
-  - `GET /api/replicate` - Returns API instructions 
-  - `POST /api/replicate` - Main proxy endpoint that forwards requests to Replicate API
-  - `OPTIONS /api/replicate` - CORS preflight handling
+## Key Features
 
-## Usage
+- **Secure API Key Management**: API keys are provided per-request and never stored on the server
+- **Cross-Origin Support**: CORS-enabled to work with any frontend domain
+- **Serverless Architecture**: Deploys as an AWS Lambda function for automatic scaling and cost efficiency
+- **Production Ready**: Comprehensive error handling, logging, and test coverage
+- **High Performance**: Built with Bun runtime for optimal speed
+- **Open Source**: MIT licensed with full source code available
 
-Send a POST request to `/api/replicate` with:
+## How It Works
 
-```json
-{
-  "model": "black-forest-labs/flux-schnell",
-  "input": {
-    "prompt": "a cute cat wearing a hat",
-    "num_outputs": 1
+The proxy provides a simple HTTP API that forwards requests to Replicate while maintaining security:
+
+1. Your frontend sends a request to the proxy with the model name, input parameters, and API key
+2. The proxy validates the request and forwards it to the appropriate Replicate model endpoint
+3. Replicate processes the request and returns the result
+4. The proxy returns the result to your frontend application
+
+### API Endpoints
+
+- `POST /api/replicate` - Main proxy endpoint for model predictions
+- `GET /api/replicate` - Returns usage instructions
+- `GET /health` - Service health check
+- `OPTIONS /api/replicate` - CORS preflight support
+
+## Usage Example
+
+Send a POST request to your deployed proxy endpoint:
+
+```javascript
+const response = await fetch('https://your-lambda-url.amazonaws.com/api/replicate', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
   },
-  "apiKey": "your-replicate-api-key"
-}
+  body: JSON.stringify({
+    model: 'black-forest-labs/flux-schnell',
+    input: {
+      prompt: 'a professional headshot of a person',
+      num_outputs: 1
+    },
+    apiKey: 'your-replicate-api-key'
+  })
+});
+
+const result = await response.json();
+console.log(result);
 ```
 
 ## Development

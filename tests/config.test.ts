@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { getConfig, CONSTANTS } from './config';
+import { getConfig, CONSTANTS } from '../src/config';
 
 describe('Configuration', () => {
   let originalEnv: Record<string, string | undefined>;
