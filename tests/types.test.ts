@@ -70,6 +70,12 @@ describe('Type Validation Functions', () => {
       expect(validateReplicateRequest(123).isValid).toBe(false);
     });
 
+    test('returns specific error for non-object bodies', () => {
+      const result = validateReplicateRequest(null);
+      expect(result.isValid).toBe(false);
+      expect(result.error).toBe('Request body must be a valid JSON object');
+    });
+
     test('rejects invalid model names', () => {
       const invalid = {
         model: 'invalid',

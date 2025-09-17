@@ -262,4 +262,102 @@ describe('Universal Handler', () => {
       expect(body.message).toContain('Route GET:/unknown not found');
     });
   });
+
+  describe('Edge Cases and Coverage', () => {
+    test('handles Lambda@Edge with no body data', () => {
+      const lambdaEdgeEvent = {
+        Records: [{
+          cf: {
+            request: {
+              method: 'GET',
+              uri: '/health',
+              headers: {},
+              querystring: 'test=value'
+            }
+          }
+        }]
+      };
+
+      const universal = fromDirectLambda(lambdaEdgeEvent);
+
+      expect(universal.httpMethod).toBe('GET');
+      expect(universal.path).toBe('/health');
+      expect(universal.body).toBe(null);
+    });
+
+    test('handles direct lambda with minimal data', () => {
+      const minimalEvent = {};
+
+      const universal = fromDirectLambda(minimalEvent);
+
+      expect(universal.httpMethod).toBe('GET');
+      expect(universal.path).toBe('/');
+      expect(universal.headers).toEqual({});
+      expect(universal.queryStringParameters).toBe(null);
+    });
+
+    test('handles restricted CORS origins', async () => {
+      const originalEnv = process.env.CORS_ALLOWED_ORIGINS;
+      process.env.CORS_ALLOWED_ORIGINS = 'https://app1.com,https://app2.com';
+      
+      try {
+        const request = {
+          httpMethod: 'GET',
+          path: '/health',
+          headers: { 'Origin': 'https://evil.com' },
+          body: null
+        };
+        const context = createLambdaContext();
+
+        const response = await universalHandler(request, context);
+
+        expect(response.statusCode).toBe(200);
+        expect(response.headers['Access-Control-Allow-Origin']).toBe('https://app1.com');
+      } finally {
+        if (originalEnv) {
+          process.env.CORS_ALLOWED_ORIGINS = originalEnv;
+        } else {
+          delete process.env.CORS_ALLOWED_ORIGINS;
+        }
+      }
+    });
+
+    test('handles JSON parsing errors', async () => {
+      const request = {
+        httpMethod: 'POST',
+        path: '/api/replicate',
+        headers: {},
+        body: 'invalid json{'
+      };
+      const context = createLambdaContext();
+
+      const response = await universalHandler(request, context);
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toBe('Invalid JSON in request body');
+    });
+
+    test('handles unexpected handler errors', async () => {
+      const request = {
+        httpMethod: 'POST',
+        path: '/api/replicate',
+        headers: {},
+        body: JSON.stringify({
+          model: 'owner/model',
+          input: { prompt: 'test' },
+          apiKey: 'test12345678'
+        })
+      };
+      const context = {
+        awsRequestId: null  // This will cause an error
+      } as any;
+
+      const response = await universalHandler(request, context);
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.error).toBe('Internal server error');
+    });
+  });
 });

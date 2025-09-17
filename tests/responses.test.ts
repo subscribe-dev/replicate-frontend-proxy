@@ -160,9 +160,9 @@ describe('Response Helpers', () => {
       const response2 = createResponse(200, { test: true }, {}, 'https://evil.com');
       expect(response2.headers?.['Access-Control-Allow-Origin']).toBe('https://app1.com');
       
-      // Test with no origin - should use first allowed origin
+      // Test with no origin - should default to wildcard
       const response3 = createResponse(200, { test: true });
-      expect(response3.headers?.['Access-Control-Allow-Origin']).toBe('https://app1.com');
+      expect(response3.headers?.['Access-Control-Allow-Origin']).toBe('*');
     } finally {
       // Restore original environment
       if (originalEnv) {
