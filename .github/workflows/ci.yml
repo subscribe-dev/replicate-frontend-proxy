@@ -28,13 +28,6 @@ jobs:
     - name: Run tests with coverage
       run: bun run test:ci
 
-    - name: Upload test results
-      uses: dorny/test-reporter@v1
-      if: always()
-      with:
-        name: Bun Test Results
-        path: junit.xml
-        reporter: java-junit
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
