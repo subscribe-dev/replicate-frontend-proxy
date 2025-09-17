@@ -1,0 +1,51 @@
+{
+  "name": "@subscribe.dev/replicate-frontend-proxy",
+  "version": "1.0.0",
+  "description": "AWS Lambda function that serves as a secure proxy for the Replicate API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "bun test --coverage",
+    "test:ci": "bun test --coverage --reporter=junit --coverage-reporter=lcov",
+    "build": "npm run build:cjs && npm run build:esm && npm run build:types",
+    "build:cjs": "bun build src/index.ts --outdir dist --target node --format cjs --outfile index.js",
+    "build:esm": "bun build src/index.ts --outdir dist --target node --format esm --outfile index.mjs",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist",
+    "dev": "bun run src/proxy.ts",
+    "clean": "rm -rf dist coverage",
+    "prebuild": "npm run clean",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "aws-lambda",
+    "replicate",
+    "proxy",
+    "typescript",
+    "bun"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.143",
+    "bun-types": "latest",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "dependencies": {
+    "replicate": "^1.1.0"
+  }
+}
