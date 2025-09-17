@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "test": "bun test --coverage",
-    "test:ci": "bun test --coverage --reporter=junit --coverage-reporter=lcov",
+    "test:ci": "bun test --coverage --reporter=junit --reporter-outfile=junit-report.xml --coverage-reporter=lcov",
     "build": "npm run build:cjs && npm run build:esm && npm run build:types",
     "build:cjs": "bun build src/index.ts --outdir dist --target node --format cjs --outfile index.js",
     "build:esm": "bun build src/index.ts --outdir dist --target node --format esm --outfile index.mjs",
