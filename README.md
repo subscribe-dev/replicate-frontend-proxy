@@ -1,7 +1,7 @@
 # Replicate Frontend Proxy
 
-[![CI](https://github.com/USER/replicate-frontend-proxy/actions/workflows/ci.yml/badge.svg)](https://github.com/USER/replicate-frontend-proxy/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/USER/replicate-frontend-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/USER/replicate-frontend-proxy)
+[![CI](https://github.com/subscribe-dev/replicate-frontend-proxy/actions/workflows/ci.yml/badge.svg)](https://github.com/USER/replicate-frontend-proxy/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/subscribe-dev/replicate-frontend-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/USER/replicate-frontend-proxy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 AWS Lambda function that serves as a secure proxy for the Replicate API. The proxy allows frontend applications to make requests to Replicate models without exposing API keys in client-side code.
