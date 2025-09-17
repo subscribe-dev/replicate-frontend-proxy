@@ -10,16 +10,73 @@ export const handler = async (event: any, context: Context): Promise<APIGatewayP
   const config = getConfig();
   const requestId = context.awsRequestId;
   const timestamp = new Date().toISOString();
-  const origin = event.headers?.['origin'] || event.headers?.['Origin'];
 
   try {
-    // Extract path and method using CloudFront/Lambda Function URL format
-    const path = event.rawPath || event.requestContext?.http?.path || '/';
-    const method = event.requestContext?.http?.method || event.httpMethod || 'GET';
+    // Extract path, method, headers, and body from different AWS Lambda event types
+    let path: string;
+    let method: string;
+    let eventType: string;
+    let headers: Record<string, string>;
+    let body: string | null;
+
+    // CloudFront OAC events (following auth service pattern)
+    if (event.Records && event.Records[0]?.cf?.request) {
+      const cfRequest = event.Records[0].cf.request;
+      path = cfRequest.uri || '/';
+      method = cfRequest.method || 'GET';
+      eventType = 'CloudFront OAC';
+      
+      // Convert CloudFront headers format to standard format
+      headers = Object.fromEntries(
+        Object.entries(cfRequest.headers || {}).map(([key, values]: [string, any]) => [
+          key, 
+          Array.isArray(values) ? values[0].value : values
+        ])
+      );
+      
+      // Extract body from CloudFront request (base64 encoded if present)
+      body = cfRequest.body?.data ? Buffer.from(cfRequest.body.data, 'base64').toString() : null;
+    }
+    // API Gateway v2 (HTTP API) events
+    else if (event.requestContext?.http) {
+      path = event.rawPath || event.requestContext.http.path || '/';
+      method = event.requestContext.http.method || 'GET';
+      eventType = 'API Gateway v2';
+      headers = event.headers || {};
+      body = event.body;
+    }
+    // API Gateway v1 (REST API) events
+    else if (event.requestContext && event.httpMethod) {
+      path = event.path || event.requestContext.path || '/';
+      method = event.httpMethod || 'GET';
+      eventType = 'API Gateway v1';
+      headers = event.headers || {};
+      body = event.body;
+    }
+    // Lambda Function URL events
+    else if (event.rawPath) {
+      path = event.rawPath || '/';
+      method = event.requestContext?.http?.method || 'GET';
+      eventType = 'Function URL';
+      headers = event.headers || {};
+      body = event.body;
+    }
+    // Fallback
+    else {
+      path = '/';
+      method = 'GET';
+      eventType = 'Unknown';
+      headers = event.headers || {};
+      body = event.body || null;
+    }
+
+    // Extract origin from headers for CORS
+    const requestOrigin = headers?.['origin'] || headers?.['Origin'];
     
     console.log(`[${requestId}] Received ${method} request at ${timestamp}`);
     console.log(`[${requestId}] Path: ${path}`);
-    console.log(`[${requestId}] Event structure:`, JSON.stringify(event, null, 2));
+    console.log(`[${requestId}] Event Type: ${eventType}`);
+    console.log(`[${requestId}] Full Event Object:`, JSON.stringify(event, null, 2));
     
     // Health check endpoint
     if (path === '/health' && method === 'GET') {
@@ -59,27 +116,27 @@ export const handler = async (event: any, context: Context): Promise<APIGatewayP
       // Handle POST requests
       if (method === 'POST') {
         // Check request size
-        if (event.body && !isValidJsonSize(event.body, config.maxRequestSize)) {
-          console.warn(`[${requestId}] Request body too large: ${Buffer.byteLength(event.body, 'utf8')} bytes`);
+        if (body && !isValidJsonSize(body, config.maxRequestSize)) {
+          console.warn(`[${requestId}] Request body too large: ${Buffer.byteLength(body, 'utf8')} bytes`);
           return badRequest(`Request body too large. Maximum size: ${config.maxRequestSize} bytes`);
         }
 
-        let body: any;
+        let parsedBody: any;
         try {
-          body = JSON.parse(event.body || '{}');
+          parsedBody = JSON.parse(body || '{}');
         } catch (e) {
           console.error(`[${requestId}] Failed to parse request body:`, sanitizeForLogs(e));
           return badRequest('Invalid JSON in request body');
         }
 
         // Validate request using proper validation
-        const validation = validateReplicateRequest(body);
+        const validation = validateReplicateRequest(parsedBody);
         if (!validation.isValid) {
           console.warn(`[${requestId}] Request validation failed: ${validation.error}`);
           return badRequest(validation.error!);
         }
 
-        const { model, input, apiKey } = body as ReplicateRequest;
+        const { model, input, apiKey } = parsedBody as ReplicateRequest;
 
         console.log(`[${requestId}] Proxying request to Replicate for model: ${model}`);
         console.log(`[${requestId}] Input parameters provided: ${input ? Object.keys(input).length : 0} keys`);
@@ -100,7 +157,24 @@ export const handler = async (event: any, context: Context): Promise<APIGatewayP
           );
           
           console.log(`[${requestId}] Replicate API call completed successfully`);
-          return ok(result);
+          
+          // Convert file objects to URLs for JSON serialization
+          let processedResult = result;
+          if (Array.isArray(result)) {
+            processedResult = await Promise.all(
+              result.map(async (item) => {
+                if (item && typeof item === 'object' && typeof item.url === 'function') {
+                  return await item.url();
+                }
+                return item;
+              })
+            );
+          } else if (result && typeof result === 'object' && typeof result.url === 'function') {
+            processedResult = await result.url();
+          }
+          
+          console.log(`[${requestId}] Processed result:`, JSON.stringify(processedResult));
+          return ok(processedResult);
 
         } catch (replicateError: any) {
           console.error(`[${requestId}] Replicate API error:`, replicateError.message);
